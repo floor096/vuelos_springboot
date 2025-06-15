@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Buscar Vuelos</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="container mt-4">
+            <h1>Buscar vuelos</h1>
+
+            <!-- Formulario de búsqueda -->
+            <form id="formBusqueda">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label>Ciudad</label>
+                        <select id="ciudad" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Fecha</label>
+                        <input id="fecha" type="date" class="form-control"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Aerolínea</label>
+                        <select id="aerolinea" class="form-select"></select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label>Vuelo</label>
+                        <select id="vuelo" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Asiento</label>
+                        <select id="asiento" class="form-select"></select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <button class="btn btn-primary" type="submit">Buscar</button>
+                </div>
+            </form>
+
+            <!-- Cargar datos del pasajero -->
+            <form id="formPasajero" class="mt-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>DNI</label>
+                        <input type="text" id="dni" class="form-control"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Nombre</label>
+                        <input type="text" id="nombre" class="form-control"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Apellido</label>
+                        <input type="text" id="apellido" class="form-control"/>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success" type="submit">Cargar datos</button>
+                </div>
+            </form>
+
+            <!-- Pago -->
+            <form id="formPago" class="mt-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>Total</label>
+                        <input type="text" id="total" class="form-control" readonly/>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Tipo de tarjeta</label>
+                        <select id="tipoTarjeta" class="form-select">
+                            <option value="VISA">VISA</option>
+                            <option value="MASTERCARD">MasterCard</option>
+                            <option value="AMERICAN_EXPRESS">American Express</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label>Número de tarjeta</label>
+                    <input type="text" id="numeroTarjeta" class="form-control"/>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-warning" type="submit">Pagar</button>
+                </div>
+            </form>
+
+            <!-- Mostrar resultado -->
+            <div id="infoVuelo" class="d-none">
+                <h3>Información del vuelo</h3>
+                <textarea class="form-control" id="infoVueloTexto" readonly></textarea>
+            </div>
+
+        </div>
+
+        <script>
+            //cargar opciones en un select
+            function cargarSelect(id, url, valueKey = "id", textKey = "nombre") {
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        const select = document.getElementById(id);
+                        select.innerHTML = '<option value="">Seleccione...</option>';
+                        data.forEach(item => {
+                            const opt = document.createElement("option");
+                            opt.value = item[valueKey];
+                            opt.textContent = item[textKey];
+                            select.appendChild(opt);
+                        });
+                    })
+                .catch(error => console.error(`Error al cargar ${id}:`, error));
+            }
+
+            function buscarVuelosPorAerolinea() {
+                const aerolineaId = document.getElementById("aerolinea").value;
+                if (!aerolineaId) return;
+
+                 fetch(`/api/v1/vuelos/por-aerolinea/${aerolineaId}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Error en respuesta del servidor");
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (!Array.isArray(data)) throw new Error("La respuesta no es una lista");
+                        const vueloSelect = document.getElementById("vuelo");
+                        vueloSelect.innerHTML = '<option value="">Seleccione...</option>';
+                        data.forEach(v => {
+                            const opt = document.createElement("option");
+                            opt.value = v.id;
+                            opt.textContent = `#${v.numeroVuelo} - ${v.aerolinea.nombreAerolinea}`;
+                            vueloSelect.appendChild(opt);
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Error cargando vuelos:", err);
+                        alert("Hubo un error al cargar los vuelos. Ver consola.");
+                    });
+            }
+
+            // carga los asientos
+            document.getElementById("vuelo").addEventListener("change", function () {
+                const vueloId = this.value;
+                if (!vueloId) return;
+
+                fetch(`/api/v1/vuelos/${vueloId}/asientos`)
+                  .then(res => {
+                    if (!res.ok) throw new Error("Error al cargar asientos");
+                    return res.json();
+                  })
+                  .then(data => {
+                    if (!Array.isArray(data)) throw new Error("No se devolvió una lista");
+                    const asientoSelect = document.getElementById("asiento");
+                    asientoSelect.innerHTML = '<option value="">Seleccione...</option>';
+                    data.forEach(asiento => {
+                      const opt = document.createElement("option");
+                      opt.value = asiento.id;
+                      opt.textContent = `Asiento ${asiento.filaAsiento}${asiento.letraAsiento}`;
+                      asientoSelect.appendChild(opt);
+                    });
+                  })
+                  .catch(err => console.error("Error cargando asientos:", err));
+            });
+
+            //carga total
+            document.getElementById("asiento").addEventListener("change", function () {
+              const asientoId = this.value;
+              const vueloId = document.getElementById("vuelo").value;
+              if (!asientoId || !vueloId) return;
+
+                fetch(`/api/v1/vuelos/${vueloId}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.tarifas && data.tarifas.length > 0) {
+                    const tarifa = data.tarifas[0];
+                    const total = parseFloat(tarifa.precioTarifa || 0) + parseFloat(tarifa.impuestoTarifa || 0);
+                    document.getElementById("total").value = total.toFixed(2);
+                  } else {
+                    document.getElementById("total").value = "0.00";
+                    console.warn("Vuelo sin tarifa asociada");
+                  }
+                })
+                .catch(err => {
+                  console.error("Error cargando tarifa:", err);
+                  document.getElementById("total").value = "0.00";
+                });
+            });
+
+<!--            // Cargar datos iniciales-->
+<!--            document.addEventListener("DOMContentLoaded", () => {-->
+<!--                cargarSelect("ciudad", "/api/v1/ciudades", "id", "nombreCiudad");-->
+<!--                cargarSelect("aerolinea", "/api/v1/aerolineas", "id", "nombreAerolinea");-->
+
+<!--&lt;!&ndash;                document.getElementById("ciudad").addEventListener("change", buscarVuelosFiltrados);&ndash;&gt;-->
+<!--&lt;!&ndash;                document.getElementById("aerolinea").addEventListener("change", buscarVuelosFiltrados);&ndash;&gt;-->
+<!--                document.getElementById("aerolinea").addEventListener("change", buscarVuelosPorAerolinea);-->
+<!--&lt;!&ndash;                document.getElementById("fecha").addEventListener("change", buscarVuelosFiltrados);&ndash;&gt;-->
+<!--            });-->
+
+<!--            // busqueda de vuelos-->
+<!--            document.getElementById("formBusqueda").addEventListener("submit", function (e) {-->
+<!--                e.preventDefault();-->
+<!--                const vueloId = document.getElementById("vuelo").value;-->
+
+<!--&lt;!&ndash;                fetch(`/api/v1/vuelos/${vueloId}`)&ndash;&gt;-->
+<!--&lt;!&ndash;                    .then(res => res.json())&ndash;&gt;-->
+<!--&lt;!&ndash;                    .then(data => {&ndash;&gt;-->
+<!--&lt;!&ndash;                        document.getElementById("infoVueloTexto").value =&ndash;&gt;-->
+<!--&lt;!&ndash;                            `Vuelo N°: ${data.numeroVuelo}\nAerolínea: ${data.aerolinea.nombreAerolinea}\nPiloto: ${data.piloto.nombrePersona}`;&ndash;&gt;-->
+<!--&lt;!&ndash;                        document.getElementById("infoVuelo").classList.remove("d-none");&ndash;&gt;-->
+<!--&lt;!&ndash;                    });&ndash;&gt;-->
+
+<!--               fetch(`/api/v1/vuelos/${vueloId}`)-->
+<!--                    .then(res => res.json())-->
+<!--                    .then(data => {-->
+<!--                        document.getElementById("infoVueloTexto").value =-->
+<!--                            `Vuelo N°: ${data.numeroVuelo}\nAerolínea: ${data.aerolinea.nombreAerolinea}\nPiloto: ${data.piloto.nombrePersona}`;-->
+<!--                        document.getElementById("infoVuelo").classList.remove("d-none");-->
+
+<!--                        if (Array.isArray(data.tarifas) && data.tarifas.length > 0) {-->
+<!--                            const tarifa = data.tarifas[0]; // Asumimos una tarifa por vuelo-->
+<!--                            const total = tarifa.precioTarifa + tarifa.impuestoTarifa;-->
+<!--                            document.getElementById("total").value = total;-->
+<!--                        } else {-->
+<!--                            document.getElementById("total").value = "";-->
+<!--                            console.warn("Vuelo sin tarifa");-->
+<!--                        }-->
+<!--                    });-->
+<!--            });-->
+
+<!--            // datos pasajero-->
+<!--            document.getElementById("formPasajero").addEventListener("submit", function (e) {-->
+<!--                e.preventDefault();-->
+<!--                const pasajero = {-->
+<!--                    dniPersona: document.getElementById("dni").value,-->
+<!--                    nombrePersona: document.getElementById("nombre").value,-->
+<!--                    apellidoPersona: document.getElementById("apellido").value-->
+<!--                };-->
+
+<!--                fetch("/api/v1/usuarios", {-->
+<!--                    method: "POST",-->
+<!--                    headers: { "Content-Type": "application/json" },-->
+<!--                    body: JSON.stringify(pasajero)-->
+<!--                })-->
+<!--                    .then(res => res.ok ? alert("Datos cargados") : alert("Error al cargar pasajero"))-->
+<!--            });-->
+
+<!--            // Pago-->
+<!--            document.getElementById("formPago").addEventListener("submit", function (e) {-->
+<!--                e.preventDefault();-->
+<!--                const pago = {-->
+<!--                    numeroTarjeta: document.getElementById("numeroTarjeta").value,-->
+<!--                    tipoTarjeta: document.getElementById("tipoTarjeta").value,-->
+<!--                    cantidadPago: document.getElementById("total").value-->
+<!--                };-->
+
+<!--                fetch("/api/v1/pagos", {-->
+<!--                    method: "POST",-->
+<!--                    headers: { "Content-Type": "application/json" },-->
+<!--                    body: JSON.stringify(pago)-->
+<!--                })-->
+<!--                    .then(res => res.ok ? alert("Pago exitoso") : alert("Error al pagar"))-->
+<!--            });-->
+
+            // Buscar vuelo y mostrar toda la información
+              document.getElementById("formBusqueda").addEventListener("submit", function (e) {
+                e.preventDefault();
+                const vueloId = document.getElementById("vuelo").value;
+
+                fetch(`/api/v1/vuelos/${vueloId}`)
+                  .then(res => res.json())
+                  .then(data => {
+                    const vueloInfo = `
+                    Ciudad de destino: ${data.aeropuertos?.[0]?.ciudad?.nombreCiudad ?? 'N/D'}
+                    Aeropuerto: ${data.aeropuertos?.[0]?.nombreAeropuerto ?? 'N/D'}
+                    Aerolínea: ${data.aerolinea?.nombreAerolinea ?? 'N/D'}
+                    Vuelo: ${data.numeroVuelo}
+                    Asiento seleccionado: ${document.getElementById("asiento").selectedOptions[0]?.textContent ?? 'Ninguno'}
+                    Fecha: ${new Date(data.fecha?.fecha).toLocaleDateString()}
+                    Tarifa: ${data.tarifas?.[0]?.precioTarifa ?? 'Sin tarifa'}
+                    Impuesto: ${data.tarifas?.[0]?.impuestoTarifa ?? 0}
+                    Datos del piloto: ${data.piloto?.nombrePersona ?? 'N/D'} ${data.piloto?.apellidoPersona ?? ''}`.trim();
+
+                    document.getElementById("infoVueloTexto").value = vueloInfo;
+                    document.getElementById("infoVuelo").classList.remove("d-none");
+
+                    // Total para pago
+                    if (Array.isArray(data.tarifas) && data.tarifas.length > 0) {
+                      const tarifa = data.tarifas[0];
+                      const total = tarifa.precioTarifa + tarifa.impuestoTarifa;
+                      document.getElementById("total").value = total;
+                    } else {
+                      document.getElementById("total").value = "";
+                    }
+                  });
+              });
+
+              // Datos del pasajero
+              document.getElementById("formPasajero").addEventListener("submit", function (e) {
+                e.preventDefault();
+                const pasajero = {
+                  dniPersona: document.getElementById("dni").value,
+                  nombrePersona: document.getElementById("nombre").value,
+                  apellidoPersona: document.getElementById("apellido").value
+                };
+
+                fetch("/api/v1/usuarios", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(pasajero)
+                })
+                  .then(res => {
+                    if (res.ok) {
+                      alert("Datos cargados");
+                      const textarea = document.getElementById("infoVueloTexto");
+                      textarea.value += `\n\nDatos del pasajero: \nDNI: ${pasajero.dniPersona}\nNombre: ${pasajero.nombrePersona} ${pasajero.apellidoPersona}`;
+                    } else {
+                      alert("Error al cargar pasajero");
+                    }
+                  });
+              });
+
+              // Procesar pago
+              document.getElementById("formPago").addEventListener("submit", function (e) {
+                e.preventDefault();
+                const pago = {
+                  numeroTarjeta: document.getElementById("numeroTarjeta").value,
+                  tipoTarjeta: document.getElementById("tipoTarjeta").value,
+                  cantidadPago: document.getElementById("total").value
+                };
+
+                fetch("/api/v1/pagos", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(pago)
+                })
+                  .then(res => {
+                    if (res.ok) {
+                      alert("Pago exitoso");
+                      const textarea = document.getElementById("infoVueloTexto");
+                      textarea.value += `\n\nPago procesado con tarjeta: ${pago.tipoTarjeta}\nNro de tarjeta: ${pago.numeroTarjeta}`;
+                    } else {
+                      alert("Error al pagar");
+                    }
+                  });
+              });
+
+              // Cargar combos al iniciar
+              document.addEventListener("DOMContentLoaded", () => {
+                cargarSelect("ciudad", "/api/v1/ciudades", "id", "nombreCiudad");
+                cargarSelect("aerolinea", "/api/v1/aerolineas", "id", "nombreAerolinea");
+                document.getElementById("aerolinea").addEventListener("change", buscarVuelosPorAerolinea);
+              });
+
+
+        </script>
+
+    </body>
+</html>

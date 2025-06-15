@@ -1,0 +1,221 @@
+<body>
+<div class="main-container">
+    <!-- Header -->
+    <div class="header-section">
+        <h1 class="header-title">Buscar vuelos</h1>
+    </div>
+
+    <div class="row">
+        <!-- Panel Izquierdo - Formulario de búsqueda y reserva -->
+        <div class="col-lg-7 left-panel">
+            <!-- Sección de búsqueda de vuelos -->
+            <div class="form-section">
+                <form th:action="@{/vuelos/buscar}" method="post" th:object="${consultaForm}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="ciudad" class="form-label">Destino:</label>
+                            <select class="form-select" id="ciudad" th:field="*{ciudad}">
+                                <option value="">--</option>
+                                <option th:each="ciudad : ${ciudades}"
+                                        th:value="${ciudad.id}"
+                                        th:text="${ciudad.nombre}">Ciudad</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha" class="form-label">Fecha:</label>
+                            <input type="date" class="form-control" id="fecha" th:field="*{fecha}">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="aerolinea" class="form-label">Aerolínea:</label>
+                            <select class="form-select" id="aerolinea" th:field="*{aerolinea}">
+                                <option value="">--</option>
+                                <option th:each="aerolinea : ${aerolineas}"
+                                        th:value="${aerolinea.id}"
+                                        th:text="${aerolinea.nombre}">Aerolínea</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vuelo" class="form-label">Vuelo:</label>
+                            <select class="form-select" id="vuelo" th:field="*{vuelo}">
+                                <option value="">--</option>
+                                <option th:each="vuelo : ${vuelos}"
+                                        th:value="${vuelo.id}"
+                                        th:text="${vuelo.numero}">Vuelo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="asiento" class="form-label">Asiento:</label>
+                            <select class="form-select" id="asiento" th:field="*{asiento}">
+                                <option value="">--</option>
+                                <option th:each="asiento : ${asientos}"
+                                        th:value="${asiento.id}"
+                                        th:text="${asiento.numero}">Asiento</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <button type="submit" class="btn btn-primary-custom btn-search">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sección de reserva -->
+            <div class="reservar-section" th:if="${mostrarReserva}">
+                <div class="section-title">Reservar</div>
+
+                <!-- Datos personales -->
+                <div class="datos-personales">
+                    <h5 class="section-title">Tus datos</h5>
+                    <form th:action="@{/vuelos/cargar-datos}" method="post" th:object="${datosPersonales}">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="dni" class="form-label">DNI:</label>
+                                <input type="text" class="form-control" id="dni" th:field="*{dni}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="nombre" class="form-label">Nombre:</label>
+                                <input type="text" class="form-control" id="nombre" th:field="*{nombre}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="apellido" class="form-label">Apellido:</label>
+                                <input type="text" class="form-control" id="apellido" th:field="*{apellido}">
+                            </div>
+                        </div>
+                        <div class="text-center mb-4">
+                            <button type="submit" class="btn btn-primary-custom">
+                                <i class="fas fa-user-plus me-2"></i>Cargar datos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sección de pago -->
+                <div class="pago-section" th:if="${mostrarPago}">
+                    <h5 class="section-title">Pago</h5>
+                    <form th:action="@{/vuelos/pagar}" method="post" th:object="${datosPago}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="total" class="form-label">Total:</label>
+                                <input type="text" class="form-control total-field" id="total"
+                                       th:field="*{total}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="tipoTarjeta" class="form-label">Tipo:</label>
+                                <select class="form-select" id="tipoTarjeta" th:field="*{tipoTarjeta}">
+                                    <option value="">--</option>
+                                    <option value="VISA">VISA</option>
+                                    <option value="MASTERCARD">MasterCard</option>
+                                    <option value="AMERICAN_EXPRESS">American Express</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="numeroTarjeta" class="form-label">Nro tarjeta:</label>
+                                <input type="text" class="form-control" id="numeroTarjeta"
+                                       th:field="*{numeroTarjeta}" placeholder="1234 5678 9012 3456">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary-custom btn-search">
+                                <i class="fas fa-credit-card me-2"></i>Pagar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Derecho - Información del vuelo -->
+        <div class="col-lg-5 right-panel">
+            <div class="tu-vuelo-section">
+                <div class="tu-vuelo-title">Tu vuelo</div>
+                <textarea class="form-control consulta-textarea" readonly
+                          th:text="${informacionVuelo}"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Script para manejar la selección en cascada de los comboboxes
+    document.getElementById('ciudad').addEventListener('change', function() {
+        const ciudadId = this.value;
+        if (ciudadId) {
+            // Aquí puedes hacer una petición AJAX para cargar aerolíneas según la ciudad
+            fetch(`/api/aerolineas/${ciudadId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const aerolineaSelect = document.getElementById('aerolinea');
+                    aerolineaSelect.innerHTML = '<option value="">--</option>';
+                    data.forEach(aerolinea => {
+                        const option = document.createElement('option');
+                        option.value = aerolinea.id;
+                        option.textContent = aerolinea.nombre;
+                        aerolineaSelect.appendChild(option);
+                    });
+                });
+        }
+    });
+
+    document.getElementById('aerolinea').addEventListener('change', function() {
+        const aerolineaId = this.value;
+        const ciudadId = document.getElementById('ciudad').value;
+        const fecha = document.getElementById('fecha').value;
+
+        if (aerolineaId && ciudadId && fecha) {
+            // Petición AJAX para cargar vuelos
+            fetch(`/api/vuelos?ciudadId=${ciudadId}&aerolineaId=${aerolineaId}&fecha=${fecha}`)
+                .then(response => response.json())
+                .then(data => {
+                    const vueloSelect = document.getElementById('vuelo');
+                    vueloSelect.innerHTML = '<option value="">--</option>';
+                    data.forEach(vuelo => {
+                        const option = document.createElement('option');
+                        option.value = vuelo.id;
+                        option.textContent = vuelo.numero;
+                        vueloSelect.appendChild(option);
+                    });
+                });
+        }
+    });
+
+    document.getElementById('vuelo').addEventListener('change', function() {
+        const vueloId = this.value;
+        if (vueloId) {
+            // Petición AJAX para cargar asientos disponibles
+            fetch(`/api/asientos/${vueloId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const asientoSelect = document.getElementById('asiento');
+                    asientoSelect.innerHTML = '<option value="">--</option>';
+                    data.forEach(asiento => {
+                        const option = document.createElement('option');
+                        option.value = asiento.id;
+                        option.textContent = asiento.numero;
+                        asientoSelect.appendChild(option);
+                    });
+                });
+        }
+    });
+
+    // Formatear número de tarjeta
+    document.getElementById('numeroTarjeta').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+        let formattedInputValue = value.match(/.{1,4}/g)?.join(' ') || value;
+        e.target.value = formattedInputValue;
+    });
+</script>
+</body>
+</html>
